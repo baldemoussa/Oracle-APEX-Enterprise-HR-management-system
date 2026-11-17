@@ -1,0 +1,12 @@
+lov countries-country-name (
+    name: COUNTRIES.COUNTRY_NAME
+    source {
+        tableName: COUNTRIES
+    }
+    columnMapping {
+        return: COUNTRY_ID
+        display: COUNTRY_NAME
+        defaultSort: COUNTRY_NAME
+    }
+)
+

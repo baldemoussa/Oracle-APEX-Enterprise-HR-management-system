@@ -1,0 +1,373 @@
+page 10 (
+    name: Location
+    alias: LOCATION
+    title: Location
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @/drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+    }
+    security {
+        authorizationScheme: @contribution-rights
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: dialogFooter
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region location (
+        name: Location
+        type: form
+        source {
+            location: localDatabase
+            tableName: LOCATIONS
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+    )
+
+    pageItem P10_CITY (
+        type: textField
+        label {
+            label: City
+            alignment: right
+        }
+        layout {
+            sequence: 40
+            region: @location
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+            icon: fa-map-marker
+            width: 32
+        }
+        validation {
+            valueRequired: true
+            maxLength: 30
+        }
+        source {
+            formRegion: @location
+            column: CITY
+            dataType: varchar2
+        }
+    )
+
+    pageItem P10_COUNTRY_ID (
+        type: selectList
+        label {
+            label: Country
+            alignment: right
+        }
+        lov {
+            type: sharedComponent
+            lov: @countries-country-name
+        }
+        layout {
+            sequence: 60
+            region: @location
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            icon: fa-globe
+            height: 1
+        }
+        source {
+            formRegion: @location
+            column: COUNTRY_ID
+            dataType: varchar2
+        }
+    )
+
+    pageItem P10_LOCATION_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @location
+            slot: regionBody
+        }
+        source {
+            formRegion: @location
+            column: LOCATION_ID
+            dataType: number
+            primaryKey: true
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P10_POSTAL_CODE (
+        type: textField
+        label {
+            label: Postal Code
+            alignment: right
+        }
+        layout {
+            sequence: 30
+            region: @location
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            icon: fa-envelope-o
+            width: 32
+        }
+        validation {
+            maxLength: 12
+        }
+        source {
+            formRegion: @location
+            column: POSTAL_CODE
+            dataType: varchar2
+        }
+    )
+
+    pageItem P10_STATE_PROVINCE (
+        type: textField
+        label {
+            label: State Province
+            alignment: right
+        }
+        layout {
+            sequence: 50
+            region: @location
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            icon: fa-map
+            width: 32
+        }
+        validation {
+            maxLength: 25
+        }
+        source {
+            formRegion: @location
+            column: STATE_PROVINCE
+            dataType: varchar2
+        }
+    )
+
+    pageItem P10_STREET_ADDRESS (
+        type: textField
+        label {
+            label: Street Address
+            alignment: right
+        }
+        layout {
+            sequence: 20
+            region: @location
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            icon: fa-home
+            width: 32
+        }
+        validation {
+            maxLength: 40
+        }
+        source {
+            formRegion: @location
+            column: STREET_ADDRESS
+            dataType: varchar2
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Cancel
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            templateOptions: #DEFAULT#
+            icon: fa-times
+        }
+        behavior {
+            action: triggerAction
+        }
+
+        triggerAction native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+            }
+        )
+
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Create
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+            icon: fa-plus
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P10_LOCATION_ID
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Delete
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: delete
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+                t-Button--danger
+                t-Button--simple
+            ]
+            icon: fa-trash
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P10_LOCATION_ID
+        }
+    )
+
+    button save (
+        buttonName: SAVE
+        label: Apply Changes
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+            icon: fa-save
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P10_LOCATION_ID
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 50
+        }
+        advanced {
+            executionMappingIdentifier: 5648025925571203
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,SAVE,DELETE
+        }
+    )
+
+    process initialize-form-location (
+        name: Initialize form Location
+        type: formInitialization
+        formRegion: @location
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+        advanced {
+            executionMappingIdentifier: 5647270830571197
+        }
+    )
+
+    process process-form-location (
+        name: Process form Location
+        type: formAutoRowProcessing
+        formRegion: @location
+        execution {
+            sequence: 10
+        }
+        advanced {
+            executionMappingIdentifier: 5647632656571201
+        }
+    )
+
+)
+

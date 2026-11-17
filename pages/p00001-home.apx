@@ -1,0 +1,342 @@
+page 1 (
+    name: Executive Overview
+    alias: HOME
+    title: Enterprise HR Management System
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+
+    region department-location-map (
+        name: Employees by Department Location
+        type: map
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--accent1
+                t-Region--scrollBody
+            ]
+        }
+        map {
+            background: builtIn
+            height: 520
+        }
+        controls {
+            navigationBar: zoomOnly
+            options: [
+                scaleBar
+                mousewheelZoom
+            ]
+        }
+        initialPositionAndZoom {
+            zoomLevel: 2
+        }
+        attributes {
+            messagesPosition: below
+        }
+
+        layer department-location-headcount (
+            name: Employees by Location
+            layout {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    with employee_counts as (
+                        select d."LOCATION_ID",
+                               count(e."EMPLOYEE_ID") "EMPLOYEE_COUNT"
+                          from "DEPARTMENTS" d
+                          left join "EMPLOYEES" e
+                            on e."DEPARTMENT_ID" = d."DEPARTMENT_ID"
+                         group by d."LOCATION_ID"
+                    )
+                    select location_data.*,
+                           location_data."LOCATION_NAME" || ' - ' ||
+                           location_data."EMPLOYEE_SUMMARY" "MAP_TOOLTIP"
+                      from (
+                            select l."LOCATION_ID",
+                                   l."CITY" ||
+                                   case
+                                       when l."STATE_PROVINCE" is not null
+                                       then ', ' || l."STATE_PROVINCE"
+                                       else ''
+                                   end || ', ' || c."COUNTRY_NAME" "LOCATION_NAME",
+                                   case upper(trim(l."CITY"))
+                                       when 'ROMA' then 41.9028
+                                       when 'VENICE' then 45.4408
+                                       when 'TOKYO' then 35.6762
+                                       when 'HIROSHIMA' then 34.3853
+                                       when 'SOUTHLAKE' then 32.9412
+                                       when 'SOUTH SAN FRANCISCO' then 37.6547
+                                       when 'SOUTH BRUNSWICK' then 40.3807
+                                       when 'SEATTLE' then 47.6062
+                                       when 'TORONTO' then 43.6532
+                                       when 'WHITEHORSE' then 60.7212
+                                       when 'OXFORD' then 51.7520
+                                       when 'STRETFORD' then 53.4466
+                                       when 'MUNICH' then 48.1351
+                                       when 'SINGAPORE' then 1.3521
+                                       when 'LONDON' then 51.5072
+                                   end "LATITUDE",
+                                   case upper(trim(l."CITY"))
+                                       when 'ROMA' then 12.4964
+                                       when 'VENICE' then 12.3155
+                                       when 'TOKYO' then 139.6503
+                                       when 'HIROSHIMA' then 132.4553
+                                       when 'SOUTHLAKE' then -97.1342
+                                       when 'SOUTH SAN FRANCISCO' then -122.4077
+                                       when 'SOUTH BRUNSWICK' then -74.5460
+                                       when 'SEATTLE' then -122.3321
+                                       when 'TORONTO' then -79.3832
+                                       when 'WHITEHORSE' then -135.0568
+                                       when 'OXFORD' then -1.2577
+                                       when 'STRETFORD' then -2.3086
+                                       when 'MUNICH' then 11.5820
+                                       when 'SINGAPORE' then 103.8198
+                                       when 'LONDON' then -0.1276
+                                   end "LONGITUDE",
+                                   ec."EMPLOYEE_COUNT",
+                                   'Employees: ' ||
+                                   to_char(ec."EMPLOYEE_COUNT") "EMPLOYEE_SUMMARY"
+                              from employee_counts ec
+                              join "LOCATIONS" l
+                                on l."LOCATION_ID" = ec."LOCATION_ID"
+                              join "COUNTRIES" c
+                                on c."COUNTRY_ID" = l."COUNTRY_ID"
+                           ) location_data
+                     where location_data."LATITUDE" is not null
+                    ```
+            }
+            columnMapping {
+                geometryColumnDataType: longitudeLatitude
+                longitudeColumn: LONGITUDE
+                latitudeColumn: LATITUDE
+                primaryKeyColumn: LOCATION_ID
+            }
+            tooltip {
+                column: MAP_TOOLTIP
+            }
+            infoWindow {
+                titleColumn: LOCATION_NAME
+                bodyColumn: EMPLOYEE_SUMMARY
+            }
+        )
+
+    )
+
+    region career-history-trend (
+        name: Career History by Year
+        type: chart
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--accent1
+                t-Region--scrollBody
+            ]
+        }
+        chart {
+            type: line
+        }
+        chartLayout {
+            height: 360
+        }
+        legend {
+            show: false
+        }
+
+        series series-1 (
+            name: Career History Records
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select extract(year from h."START_DATE") "CAREER_YEAR",
+                           count(*) "HISTORY_COUNT"
+                      from "JOB_HISTORY" h
+                     group by extract(year from h."START_DATE")
+                     order by 1
+                    ```
+            }
+            columnMapping {
+                label: CAREER_YEAR
+                value: HISTORY_COUNT
+            }
+            performance {
+                maxRowsToProcess: 100
+            }
+        )
+
+        axis x (
+            name: x
+            majorTicks {
+                show: auto
+            }
+        )
+
+        axis y (
+            name: y
+            value {
+                format: decimal
+                decimalPlaces: 0
+            }
+            majorTicks {
+                show: auto
+            }
+        )
+    )
+
+    region workforce-analytics (
+        name: Employees by Department
+        type: chart
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--accent1
+                t-Region--scrollBody
+            ]
+        }
+        chartLayout {
+            height: 400
+        }
+
+        series series-1 (
+            name: Series 1
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select d."DEPARTMENT_NAME" "DEPARTMENT_NAME",
+                           count(e."EMPLOYEE_ID") value
+                      from "DEPARTMENTS" d
+                      left join "EMPLOYEES" e
+                        on e."DEPARTMENT_ID" = d."DEPARTMENT_ID"
+                     group by d."DEPARTMENT_ID", d."DEPARTMENT_NAME"
+                     order by 2 desc
+                    ```
+            }
+            columnMapping {
+                label: DEPARTMENT_NAME
+                value: VALUE
+            }
+            performance {
+                maxRowsToProcess: 40
+            }
+        )
+
+        axis x (
+            name: x
+        )
+
+        axis y (
+            name: y
+            value {
+                format: decimal
+                decimalPlaces: 0
+                formatScaling: none
+            }
+        )
+    )
+
+    region enterprise-hr-management-system (
+        name: Enterprise HR Management System
+        type: staticContent
+        source {
+            htmlCode: Comprehensive enterprise Human Resources management system for workforce administration, department structure, compensation, and organizational analytics.
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/hero
+            templateOptions: #DEFAULT#
+        }
+        image {
+            fileUrl: #APP_FILES#icons/app-icon-512.png
+        }
+    )
+
+    region salary-distribution (
+        name: Employee Headcount by Job
+        type: chart
+        layout {
+            sequence: 20
+            slot: body
+            startNewRow: false
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--accent1
+                t-Region--scrollBody
+            ]
+        }
+        chart {
+            type: pie
+        }
+        value {
+            format: decimal
+            decimalPlaces: 0
+        }
+        legend {
+            show: false
+        }
+
+        series series-1 (
+            name: Series 1
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select j."JOB_TITLE" "JOB_TITLE",
+                           count(e."EMPLOYEE_ID") value
+                      from "JOBS" j
+                      left join "EMPLOYEES" e
+                        on e."JOB_ID" = j."JOB_ID"
+                     group by j."JOB_ID", j."JOB_TITLE"
+                     order by 2 desc
+                    ```
+            }
+            columnMapping {
+                label: JOB_TITLE
+                value: VALUE
+            }
+            label {
+                show: true
+            }
+            performance {
+                maxRowsToProcess: 20
+            }
+        )
+
+    )
+
+)
+

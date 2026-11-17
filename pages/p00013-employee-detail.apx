@@ -1,0 +1,422 @@
+page 13 (
+    name: Employee Details
+    alias: EMPLOYEE-DETAILS
+    title: Employee Details
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    help {
+        helpText:
+            ```html
+            <p>Review an employee's profile, contact information, department, manager, and office location. Employee details are read-only on this page.</p>
+            ```
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region employee-context (
+        name: Employee Context
+        type: staticContent
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region button-bar (
+        name: Button Bar
+        type: staticContent
+        layout {
+            sequence: 6
+            slot: body
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: [
+                #DEFAULT#
+                t-ButtonRegion--noUI
+            ]
+        }
+    )
+
+    region employee-profile (
+        name: Employee Profile
+        type: cards
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select e."EMPLOYEE_ID",
+                       trim(e."FIRST_NAME" || ' ' || e."LAST_NAME") "EMPLOYEE_NAME",
+                       j."JOB_TITLE",
+                       'Department: ' || nvl(d."DEPARTMENT_NAME", 'Unassigned') ||
+                       '  ·  Manager: ' ||
+                       case
+                           when m."EMPLOYEE_ID" is not null
+                           then trim(m."FIRST_NAME" || ' ' || m."LAST_NAME")
+                           else 'Not assigned'
+                       end || '  ·  Office: ' ||
+                       nvl(l."CITY" ||
+                           case
+                               when l."STATE_PROVINCE" is not null
+                               then ', ' || l."STATE_PROVINCE"
+                               else ''
+                           end || ', ' || c."COUNTRY_NAME", 'No office assigned') "ORGANIZATION_DETAILS",
+                       'Email: ' || nvl(e."EMAIL", 'Not provided') ||
+                       '  ·  Phone: ' || nvl(e."PHONE_NUMBER", 'Not provided') ||
+                       '  ·  Hired: ' || to_char(e."HIRE_DATE", 'DD Mon YYYY') "CONTACT_DETAILS"
+                  from "EMPLOYEES" e
+                  left join "JOBS" j
+                    on j."JOB_ID" = e."JOB_ID"
+                  left join "DEPARTMENTS" d
+                    on d."DEPARTMENT_ID" = e."DEPARTMENT_ID"
+                  left join "EMPLOYEES" m
+                    on m."EMPLOYEE_ID" = e."MANAGER_ID"
+                  left join "LOCATIONS" l
+                    on l."LOCATION_ID" = d."LOCATION_ID"
+                  left join "COUNTRIES" c
+                    on c."COUNTRY_ID" = l."COUNTRY_ID"
+                 where e."EMPLOYEE_ID" = :P13_EMPLOYEE_ID
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/cards-container
+            templateOptions: [
+                #DEFAULT#
+                t-CardsRegion--styleB
+            ]
+        }
+        componentAppearance {
+            layout: horizontal
+        }
+        messages {
+            whenNoDataFound: Employee not found. Return to the Employee Directory and select a valid record.
+        }
+        card {
+            primaryKeyColumn1: EMPLOYEE_ID
+        }
+        title {
+            column: EMPLOYEE_NAME
+        }
+        subtitle {
+            column: JOB_TITLE
+        }
+        body {
+            column: ORGANIZATION_DETAILS
+        }
+        secondaryBody {
+            column: CONTACT_DETAILS
+        }
+        iconAndBadge {
+            iconSource: initials
+            iconColumn: EMPLOYEE_NAME
+            iconPosition: start
+            iconDescription: Employee initials
+        }
+    )
+
+    region employee-office-map (
+        name: Office Location
+        type: map
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--accent1
+            ]
+        }
+        map {
+            background: builtIn
+            standard: openstreetmapPositron
+            height: 440
+        }
+        controls {
+            navigationBar: zoomOnly
+            options: [
+                scaleBar
+                mousewheelZoom
+            ]
+        }
+        initialPositionAndZoom {
+            type: basedOnSpatialResults
+            zoomLevel: 11
+        }
+        attributes {
+            messagesPosition: below
+        }
+
+        layer employee-office (
+            name: Employee Office
+            layout {
+                sequence: 10
+            }
+            source {
+                location: localDatabase
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select e."EMPLOYEE_ID",
+                           l."CITY" ||
+                           case
+                               when l."STATE_PROVINCE" is not null
+                               then ', ' || l."STATE_PROVINCE"
+                               else ''
+                           end || ', ' || c."COUNTRY_NAME" "OFFICE_NAME",
+                           case upper(trim(l."CITY"))
+                               when 'ROMA' then 41.9028
+                               when 'VENICE' then 45.4408
+                               when 'TOKYO' then 35.6762
+                               when 'HIROSHIMA' then 34.3853
+                               when 'SOUTHLAKE' then 32.9412
+                               when 'SOUTH SAN FRANCISCO' then 37.6547
+                               when 'SOUTH BRUNSWICK' then 40.3807
+                               when 'SEATTLE' then 47.6062
+                               when 'TORONTO' then 43.6532
+                               when 'WHITEHORSE' then 60.7212
+                               when 'OXFORD' then 51.7520
+                               when 'STRETFORD' then 53.4466
+                               when 'MUNICH' then 48.1351
+                               when 'SINGAPORE' then 1.3521
+                               when 'LONDON' then 51.5072
+                           end "LATITUDE",
+                           case upper(trim(l."CITY"))
+                               when 'ROMA' then 12.4964
+                               when 'VENICE' then 12.3155
+                               when 'TOKYO' then 139.6503
+                               when 'HIROSHIMA' then 132.4553
+                               when 'SOUTHLAKE' then -97.1342
+                               when 'SOUTH SAN FRANCISCO' then -122.4077
+                               when 'SOUTH BRUNSWICK' then -74.5460
+                               when 'SEATTLE' then -122.3321
+                               when 'TORONTO' then -79.3832
+                               when 'WHITEHORSE' then -135.0568
+                               when 'OXFORD' then -1.2577
+                               when 'STRETFORD' then -2.3086
+                               when 'MUNICH' then 11.5820
+                               when 'SINGAPORE' then 103.8198
+                               when 'LONDON' then -0.1276
+                           end "LONGITUDE",
+                           trim(e."FIRST_NAME" || ' ' || e."LAST_NAME") ||
+                           '  ·  ' || nvl(j."JOB_TITLE", 'Role not specified') ||
+                           '  ·  ' || l."CITY" "MAP_TOOLTIP"
+                      from "EMPLOYEES" e
+                      join "DEPARTMENTS" d
+                        on d."DEPARTMENT_ID" = e."DEPARTMENT_ID"
+                      join "LOCATIONS" l
+                        on l."LOCATION_ID" = d."LOCATION_ID"
+                      join "COUNTRIES" c
+                        on c."COUNTRY_ID" = l."COUNTRY_ID"
+                      left join "JOBS" j
+                        on j."JOB_ID" = e."JOB_ID"
+                     where e."EMPLOYEE_ID" = :P13_EMPLOYEE_ID
+                       and case upper(trim(l."CITY"))
+                               when 'ROMA' then 1
+                               when 'VENICE' then 1
+                               when 'TOKYO' then 1
+                               when 'HIROSHIMA' then 1
+                               when 'SOUTHLAKE' then 1
+                               when 'SOUTH SAN FRANCISCO' then 1
+                               when 'SOUTH BRUNSWICK' then 1
+                               when 'SEATTLE' then 1
+                               when 'TORONTO' then 1
+                               when 'WHITEHORSE' then 1
+                               when 'OXFORD' then 1
+                               when 'STRETFORD' then 1
+                               when 'MUNICH' then 1
+                               when 'SINGAPORE' then 1
+                               when 'LONDON' then 1
+                           end = 1
+                    ```
+                pageItemsToSubmit: P13_EMPLOYEE_ID
+            }
+            columnMapping {
+                geometryColumnDataType: longitudeLatitude
+                longitudeColumn: LONGITUDE
+                latitudeColumn: LATITUDE
+                primaryKeyColumn: EMPLOYEE_ID
+            }
+            tooltip {
+                column: MAP_TOOLTIP
+            }
+            infoWindow {
+                titleColumn: OFFICE_NAME
+                bodyColumn: MAP_TOOLTIP
+            }
+        )
+    )
+
+    region office-map-note (
+        name: Map Coverage
+        type: staticContent
+        source {
+            htmlCode: Office markers are available for the cities configured on the Workforce Overview map. The employee profile above always shows the office city and country.
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/alert
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region compensation (
+        name: Compensation
+        type: cards
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select e."EMPLOYEE_ID",
+                       'Salary: ' || to_char(e."SALARY", 'FM999G999G990D00') "SALARY_DISPLAY",
+                       case
+                           when e."COMMISSION_PCT" is not null
+                           then 'Commission: ' || to_char(e."COMMISSION_PCT" * 100, 'FM990D00') || '%'
+                           else 'Commission: None'
+                       end "COMMISSION_DISPLAY"
+                  from "EMPLOYEES" e
+                 where e."EMPLOYEE_ID" = :P13_EMPLOYEE_ID
+                ```
+        }
+        layout {
+            sequence: 40
+            slot: body
+        }
+        appearance {
+            template: @/cards-container
+            templateOptions: [
+                #DEFAULT#
+                t-CardsRegion--styleB
+            ]
+        }
+        componentAppearance {
+            layout: horizontal
+        }
+        security {
+            authorizationScheme: @administration-rights
+        }
+        card {
+            primaryKeyColumn1: EMPLOYEE_ID
+        }
+        title {
+            column: SALARY_DISPLAY
+        }
+        subtitle {
+            column: COMMISSION_DISPLAY
+        }
+        iconAndBadge {
+            iconSource: iconClass
+            iconCssClasses: fa-money
+            iconPosition: start
+            iconDescription: Compensation
+        }
+    )
+
+    button back-to-directory (
+        buttonName: BACK_TO_DIRECTORY
+        label: Employee Directory
+        layout {
+            sequence: 10
+            region: @button-bar
+            slot: close
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+                t-Button--noUI
+            ]
+            icon: fa-arrow-left
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 2
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    button edit-employee (
+        buttonName: EDIT_EMPLOYEE
+        label: Edit Employee
+        layout {
+            sequence: 20
+            region: @button-bar
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text-with-icon
+            hot: true
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+            ]
+            icon: fa-edit
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 3
+                items: {
+                    P3_EMPLOYEE_ID: &P13_EMPLOYEE_ID.
+                }
+                clearCache: 3
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+        security {
+            authorizationScheme: @contribution-rights
+        }
+    )
+
+    pageItem P13_EMPLOYEE_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @employee-context
+            slot: regionBody
+        }
+        security {
+            sessionStateProtection: unrestricted
+        }
+    )
+)

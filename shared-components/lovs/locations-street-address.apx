@@ -1,0 +1,12 @@
+lov locations-street-address (
+    name: LOCATIONS.STREET_ADDRESS
+    source {
+        tableName: LOCATIONS
+    }
+    columnMapping {
+        return: LOCATION_ID
+        display: STREET_ADDRESS
+        defaultSort: STREET_ADDRESS
+    }
+)
+

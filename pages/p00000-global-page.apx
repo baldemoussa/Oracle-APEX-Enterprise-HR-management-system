@@ -1,0 +1,29 @@
+page 0 (
+    name: Global Page
+
+    region copyright-footer (
+        name: Application Copyright
+        type: staticContent
+        source {
+            htmlCode:
+                ```html
+                <div class="u-textCenter u-padding-sm u-color-7">
+                    <span>&copy; 2026 Mamadou Moussa Balde. All rights reserved.</span>
+                    <span aria-hidden="true">&nbsp;|&nbsp;</span>
+                    <a href="https://www.linkedin.com/in/2mb/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                    <span aria-hidden="true">&nbsp;|&nbsp;</span>
+                    <a href="https://github.com/baldemoussa" target="_blank" rel="noopener noreferrer">GitHub</a>
+                </div>
+                ```
+        }
+        layout {
+            sequence: 999
+            slot: footer
+        }
+        appearance {
+            template: @/blank-with-attributes-no-grid
+            templateOptions: #DEFAULT#
+        }
+    )
+)
+

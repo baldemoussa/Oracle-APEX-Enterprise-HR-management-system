@@ -1,0 +1,19 @@
+genAIService gemini-learning (
+    name: Gemini_learning
+    provider: googleGemini
+    endpointUrl {
+        url: https://generativelanguage.googleapis.com/v1
+    }
+    authentication {
+        credentials: @credentials-for-gemini-learning
+    }
+    appBuilder {
+        usedByAppBuilder: true
+        defaultForNewApps: true
+    }
+    advanced {
+        modelName: gemini-3.6-flash
+        providerApi: interactions
+    }
+)
+

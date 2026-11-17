@@ -1,0 +1,163 @@
+list navigation-menu (
+    name: Navigation Menu
+
+    entry administration (
+        label: Administration
+        icon {
+            imageIconCssClasses: fa-user-wrench
+        }
+        layout {
+            sequence: 10000
+        }
+        link {
+            target: {
+                page: 10000
+            }
+        }
+        security {
+            authorizationScheme: @administration-rights
+        }
+    )
+
+    entry career-history (
+        label: Career History
+        icon {
+            imageIconCssClasses: fa-history
+        }
+        layout {
+            sequence: 50
+        }
+        link {
+            target: {
+                page: 8
+            }
+        }
+    )
+
+    entry centralized-directory (
+        label: Centralized Directory
+        icon {
+            imageIconCssClasses: fa-address-card
+        }
+        layout {
+            sequence: 80
+        }
+        link {
+            target: {
+                page: 12
+            }
+        }
+    )
+
+    entry departments-overview (
+        label: Departments Overview
+        icon {
+            imageIconCssClasses: fa-sitemap
+        }
+        layout {
+            sequence: 30
+        }
+        link {
+            target: {
+                page: 4
+            }
+        }
+    )
+
+    entry department-teams (
+        label: Department Teams
+        icon {
+            imageIconCssClasses: fa-users
+        }
+        layout {
+            sequence: 35
+        }
+        link {
+            target: {
+                page: 11
+            }
+        }
+    )
+
+    entry employee-directory (
+        label: Employee Directory
+        icon {
+            imageIconCssClasses: fa-address-book
+        }
+        layout {
+            sequence: 20
+        }
+        link {
+            target: {
+                page: 2
+            }
+        }
+    )
+
+    entry executive-overview (
+        label: Executive Overview
+        icon {
+            imageIconCssClasses: fa-area-chart
+        }
+        layout {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 1
+            }
+        }
+    )
+
+    entry job-roles (
+        label: Job Roles
+        icon {
+            imageIconCssClasses: fa-briefcase
+        }
+        layout {
+            sequence: 40
+        }
+        link {
+            target: {
+                page: 6
+            }
+        }
+    )
+
+    entry office-locations (
+        label: Office Locations
+        icon {
+            imageIconCssClasses: fa-building
+        }
+        layout {
+            sequence: 60
+        }
+        link {
+            target: {
+                page: 9
+            }
+        }
+    )
+
+    entry office-map (
+        label: Office Map
+        icon {
+            imageIconCssClasses: fa-map-marker
+        }
+        layout {
+            sequence: 90
+            parentEntry: @office-locations
+        }
+        isCurrent {
+            type: pages
+            pages: 15
+        }
+        link {
+            target: {
+                page: 15
+            }
+        }
+    )
+
+)
+

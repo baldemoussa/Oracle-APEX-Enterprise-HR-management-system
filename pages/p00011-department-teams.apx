@@ -1,0 +1,437 @@
+page 11 (
+    name: Department Teams
+    alias: DEPARTMENT-TEAMS
+    title: Department Teams
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    help {
+        helpText:
+            ```html
+            <p>Select a department to browse its employees. Each employee card shows their role and available contact details.</p>
+            <p>Select a card to view the employee profile and office map.</p>
+            ```
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region department-selector (
+        name: Choose a Department
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--accent1
+            ]
+        }
+    )
+
+    pageItem P11_DEPARTMENT_ID (
+        type: selectList
+        label {
+            label: Department
+            alignment: right
+        }
+        lov {
+            type: sharedComponent
+            lov: @departments-department-name
+            displayExtraValues: false
+            displayNullValue: false
+        }
+        layout {
+            sequence: 10
+            region: @department-selector
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+            icon: fa-sitemap
+        }
+        validation {
+            valueRequired: true
+        }
+        default {
+            type: sqlQuerySingleValue
+            sqlQuerySingleValue:
+                ```sql
+                select min("DEPARTMENT_ID")
+                  from "DEPARTMENTS"
+                ```
+        }
+    )
+
+    region department-overview (
+        name: Department Overview
+        type: cards
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select d."DEPARTMENT_ID",
+                       d."DEPARTMENT_NAME",
+                       l."CITY" "OFFICE_CITY",
+                       case
+                           when m."EMPLOYEE_ID" is not null
+                           then trim(m."FIRST_NAME" || ' ' || m."LAST_NAME")
+                           else 'No department manager assigned'
+                       end "DEPARTMENT_MANAGER",
+                       'Team size: ' || to_char(count(e."EMPLOYEE_ID")) "TEAM_SIZE"
+                  from "DEPARTMENTS" d
+                  left join "LOCATIONS" l
+                    on l."LOCATION_ID" = d."LOCATION_ID"
+                  left join "EMPLOYEES" m
+                    on m."EMPLOYEE_ID" = d."MANAGER_ID"
+                  left join "EMPLOYEES" e
+                    on e."DEPARTMENT_ID" = d."DEPARTMENT_ID"
+                 where d."DEPARTMENT_ID" = :P11_DEPARTMENT_ID
+                 group by d."DEPARTMENT_ID", d."DEPARTMENT_NAME", l."CITY",
+                          m."EMPLOYEE_ID", m."FIRST_NAME", m."LAST_NAME"
+                ```
+            pageItemsToSubmit: P11_DEPARTMENT_ID
+        }
+        layout {
+            sequence: 20
+            slot: body
+            columnSpan: 6
+        }
+        appearance {
+            template: @/cards-container
+            templateOptions: [
+                #DEFAULT#
+                t-CardsRegion--styleB
+            ]
+        }
+        componentAppearance {
+            layout: horizontal
+        }
+        messages {
+            whenNoDataFound: Select a department to view its overview.
+        }
+        card {
+            primaryKeyColumn1: DEPARTMENT_ID
+        }
+        title {
+            column: DEPARTMENT_NAME
+        }
+        subtitle {
+            column: OFFICE_CITY
+        }
+        body {
+            column: DEPARTMENT_MANAGER
+        }
+        secondaryBody {
+            column: TEAM_SIZE
+        }
+        iconAndBadge {
+            iconSource: initials
+            iconColumn: DEPARTMENT_NAME
+            iconPosition: start
+        }
+    )
+
+    region department-employees (
+        name: Team Members
+        type: cards
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select e."EMPLOYEE_ID",
+                       trim(e."FIRST_NAME" || ' ' || e."LAST_NAME") "EMPLOYEE_NAME",
+                       j."JOB_TITLE",
+                       nvl(e."EMAIL", 'Email not provided') "EMAIL",
+                       nvl(e."PHONE_NUMBER", 'Phone not provided') "PHONE_NUMBER",
+                       substr(e."FIRST_NAME", 1, 1) || substr(e."LAST_NAME", 1, 1) "EMPLOYEE_INITIALS"
+                  from "EMPLOYEES" e
+                  left join "JOBS" j
+                    on j."JOB_ID" = e."JOB_ID"
+                 where e."DEPARTMENT_ID" = :P11_DEPARTMENT_ID
+                 order by e."LAST_NAME", e."FIRST_NAME"
+                ```
+            pageItemsToSubmit: P11_DEPARTMENT_ID
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/cards-container
+            templateOptions: [
+                #DEFAULT#
+                t-CardsRegion--styleB
+            ]
+        }
+        componentAppearance {
+            layout: grid
+            gridColumns: 3
+        }
+        pagination {
+            type: page
+            cardsPerPage: 12
+        }
+        messages {
+            whenNoDataFound: No employees are currently assigned to this department.
+        }
+        card {
+            primaryKeyColumn1: EMPLOYEE_ID
+        }
+        action view-employee (
+            type: button
+            label: View employee details
+            behavior {
+                type: redirectThisApp
+                target: {
+                    page: 13
+                    items: {
+                        P13_EMPLOYEE_ID: &EMPLOYEE_ID.
+                    }
+                    clearCache: 13
+                }
+            }
+            layout {
+                sequence: 10
+                position: primary
+            }
+            appearance {
+                displayType: icon
+                icon: fa-id-card
+            }
+        )
+        title {
+            column: EMPLOYEE_NAME
+        }
+        subtitle {
+            column: JOB_TITLE
+        }
+        body {
+            column: EMAIL
+        }
+        secondaryBody {
+            column: PHONE_NUMBER
+        }
+        iconAndBadge {
+            iconSource: initials
+            iconColumn: EMPLOYEE_INITIALS
+            iconPosition: top
+        }
+    )
+
+    region department-office-map (
+        name: Department Office Location
+        type: map
+        layout {
+            sequence: 21
+            slot: body
+            columnSpan: 6
+            startNewRow: false
+            newColumn: true
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--accent1
+            ]
+        }
+        map {
+            background: builtIn
+            standard: openstreetmapPositron
+            height: 200
+        }
+        controls {
+            navigationBar: zoomOnly
+            options: [
+                scaleBar
+                mousewheelZoom
+            ]
+        }
+        initialPositionAndZoom {
+            type: basedOnSpatialResults
+            zoomLevel: 12
+        }
+        attributes {
+            messagesPosition: below
+        }
+        layer department-office (
+            name: Department Office
+            layout {
+                sequence: 10
+            }
+            source {
+                location: localDatabase
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select d."LOCATION_ID",
+                           d."DEPARTMENT_NAME",
+                           l."CITY" ||
+                           case
+                               when l."STATE_PROVINCE" is not null
+                               then ', ' || l."STATE_PROVINCE"
+                               else ''
+                           end || ', ' || c."COUNTRY_NAME" "OFFICE_LOCATION",
+                           case upper(trim(l."CITY"))
+                               when 'ROMA' then 41.9028
+                               when 'VENICE' then 45.4408
+                               when 'TOKYO' then 35.6762
+                               when 'HIROSHIMA' then 34.3853
+                               when 'SOUTHLAKE' then 32.9412
+                               when 'SOUTH SAN FRANCISCO' then 37.6547
+                               when 'SOUTH BRUNSWICK' then 40.3807
+                               when 'SEATTLE' then 47.6062
+                               when 'TORONTO' then 43.6532
+                               when 'WHITEHORSE' then 60.7212
+                               when 'OXFORD' then 51.7520
+                               when 'STRETFORD' then 53.4466
+                               when 'MUNICH' then 48.1351
+                               when 'SINGAPORE' then 1.3521
+                               when 'LONDON' then 51.5072
+                           end "LATITUDE",
+                           case upper(trim(l."CITY"))
+                               when 'ROMA' then 12.4964
+                               when 'VENICE' then 12.3155
+                               when 'TOKYO' then 139.6503
+                               when 'HIROSHIMA' then 132.4553
+                               when 'SOUTHLAKE' then -97.1342
+                               when 'SOUTH SAN FRANCISCO' then -122.4077
+                               when 'SOUTH BRUNSWICK' then -74.5460
+                               when 'SEATTLE' then -122.3321
+                               when 'TORONTO' then -79.3832
+                               when 'WHITEHORSE' then -135.0568
+                               when 'OXFORD' then -1.2577
+                               when 'STRETFORD' then -2.3086
+                               when 'MUNICH' then 11.5820
+                               when 'SINGAPORE' then 103.8198
+                               when 'LONDON' then -0.1276
+                           end "LONGITUDE",
+                           d."DEPARTMENT_NAME" || ' office - ' || l."CITY" "MAP_TOOLTIP"
+                      from "DEPARTMENTS" d
+                      join "LOCATIONS" l
+                        on l."LOCATION_ID" = d."LOCATION_ID"
+                      join "COUNTRIES" c
+                        on c."COUNTRY_ID" = l."COUNTRY_ID"
+                     where d."DEPARTMENT_ID" = :P11_DEPARTMENT_ID
+                       and case upper(trim(l."CITY"))
+                               when 'ROMA' then 1
+                               when 'VENICE' then 1
+                               when 'TOKYO' then 1
+                               when 'HIROSHIMA' then 1
+                               when 'SOUTHLAKE' then 1
+                               when 'SOUTH SAN FRANCISCO' then 1
+                               when 'SOUTH BRUNSWICK' then 1
+                               when 'SEATTLE' then 1
+                               when 'TORONTO' then 1
+                               when 'WHITEHORSE' then 1
+                               when 'OXFORD' then 1
+                               when 'STRETFORD' then 1
+                               when 'MUNICH' then 1
+                               when 'SINGAPORE' then 1
+                               when 'LONDON' then 1
+                           end = 1
+                    ```
+                pageItemsToSubmit: P11_DEPARTMENT_ID
+            }
+            columnMapping {
+                geometryColumnDataType: longitudeLatitude
+                longitudeColumn: LONGITUDE
+                latitudeColumn: LATITUDE
+                primaryKeyColumn: LOCATION_ID
+            }
+            tooltip {
+                column: MAP_TOOLTIP
+            }
+            infoWindow {
+                titleColumn: OFFICE_LOCATION
+                bodyColumn: MAP_TOOLTIP
+            }
+        )
+    )
+
+    dynamicAction refresh-team (
+        name: Refresh Team Cards
+        execution {
+            sequence: 10
+        }
+        when {
+            event: change
+            selectionType: items
+            items: P11_DEPARTMENT_ID
+        }
+
+        action refresh-department-overview (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @department-overview
+            }
+            execution {
+                sequence: 5
+                fireOnInit: false
+            }
+        )
+
+        action refresh-team-members (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @department-employees
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+        action reset-department-office-map (
+            name: Reset department office map
+            action: executeJsCode
+            affectedElements {
+                selectionType: region
+                region: @department-office-map
+            }
+            settings {
+                jsCode:
+                    ```javascript
+                    var officeMapElement = this.affectedElements[0];
+                    var officeMap = apex.region(officeMapElement.id);
+                    officeMap.reset();
+                    ```
+            }
+            execution {
+                sequence: 15
+                fireOnInit: false
+            }
+        )
+    )
+)

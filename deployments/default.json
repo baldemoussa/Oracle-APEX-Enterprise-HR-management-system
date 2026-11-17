@@ -1,0 +1,12 @@
+{
+  "workspace": {
+    "id": 2334629225471735,
+    "name": "local_dev"
+  },
+  "app": {
+    "id": 110,
+    "sessionStateProtection": {
+      "checksumSalt": "4943D224016CFDF330B736345B3907B4616FB4653150A38B1D1025535817BBF8"
+    }
+  }
+}
